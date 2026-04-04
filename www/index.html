@@ -49,6 +49,24 @@
       color: #1a1714;
       border-bottom-color: #c4bdb4;
     }
+
+    #cannonball {
+      position: fixed;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #4a4340, #2a2520 60%, #1a1714);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3), inset 0 -2px 4px rgba(0,0,0,0.4);
+      pointer-events: none;
+      z-index: 100;
+      display: none;
+    }
+
+    body {
+      cursor: pointer;
+    }
+
+    .line a {
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
