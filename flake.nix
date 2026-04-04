@@ -6,14 +6,97 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, flake-utils, ... }:
+    let
+      # NixOS module — import this in your system flake
+      nixosModule = { config, lib, pkgs, ... }:
+        let
+          cfg = config.services.jack-site;
+          site = self.packages.${pkgs.system}.default;
+        in
+        {
+          options.services.jack-site = {
+            enable = lib.mkEnableOption "jack.kelliher.info static site";
+
+            port = lib.mkOption {
+              type = lib.types.port;
+              default = 8780;
+              description = "Port for the local Caddy file server";
+            };
+
+            tunnelTokenFile = lib.mkOption {
+              type = lib.types.path;
+              description = "Path to file containing the Cloudflare tunnel token (decrypted by sops-nix or similar)";
+            };
+          };
+
+          config = lib.mkIf cfg.enable {
+            systemd.services.jack-site-caddy = {
+              description = "jack.kelliher.info — Caddy static file server";
+              after = [ "network.target" ];
+              wantedBy = [ "multi-user.target" ];
+              serviceConfig = {
+                ExecStart = "${pkgs.caddy}/bin/caddy run --config ${pkgs.writeText "jack-site-Caddyfile" ''
+                  :${toString cfg.port} {
+                    root * ${site}
+                    file_server
+                    header {
+                      X-Content-Type-Options nosniff
+                      X-Frame-Options DENY
+                      Referrer-Policy strict-origin-when-cross-origin
+                    }
+                    handle /health {
+                      respond "OK" 200
+                    }
+                    log {
+                      output stdout
+                      format console
+                    }
+                  }
+                ''}";
+                Restart = "on-failure";
+                RestartSec = 5;
+                DynamicUser = true;
+                ProtectHome = true;
+                PrivateTmp = true;
+                NoNewPrivileges = true;
+                ProtectSystem = "strict";
+              };
+            };
+
+            systemd.services.jack-site-cloudflared = {
+              description = "jack.kelliher.info — Cloudflare Tunnel";
+              after = [ "network-online.target" "jack-site-caddy.service" ];
+              wants = [ "network-online.target" ];
+              wantedBy = [ "multi-user.target" ];
+              script = ''
+                TOKEN=$(cat ${cfg.tunnelTokenFile})
+                exec ${pkgs.cloudflared}/bin/cloudflared --no-autoupdate tunnel run --token "$TOKEN"
+              '';
+              serviceConfig = {
+                Type = "simple";
+                Restart = "on-failure";
+                RestartSec = 10;
+                DynamicUser = true;
+                ProtectHome = true;
+                PrivateTmp = true;
+                NoNewPrivileges = true;
+                ProtectSystem = "strict";
+              };
+            };
+          };
+        };
+    in
+    {
+      nixosModules.default = nixosModule;
+    }
+    //
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
       in
       {
-        # Static site output — just copies www/ into the nix store.
-        # Swap this for a real build step (vite, 11ty, etc.) later.
+        # Static site output
         packages.default = pkgs.stdenv.mkDerivation {
           pname = "jack-kelliher-info";
           version = "0.1.0";
@@ -26,31 +109,18 @@
 
         devShells.default = pkgs.mkShell {
           name = "jack-kelliher-info";
-
           buildInputs = with pkgs; [
-            # Infrastructure
             opentofu
-            cloudflared
-
-            # Secrets
             sops
             age
             ssh-to-age
-
-            # Web server (local dev + production)
             caddy
-
-            # Future client app
             nodejs_22
-
-            # Utilities
             jq
             curl
             git
           ];
-
           shellHook = ''
-            export JACK_SITE_ROOT="$(pwd)"
             echo ""
             echo "🃏 jack.kelliher.info"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
