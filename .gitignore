@@ -9,8 +9,11 @@ terraform/terraform.tfvars
 terraform/tfplan*
 terraform/.terraform.lock.hcl
 
-# Node (future)
+# Dependencies
 node_modules/
+
+# Build output is committed (nix sandbox can't fetch deps)
+# Run `bun run build` before committing
 
 # Secrets (plaintext) — encrypted yaml is committed
 *.key
