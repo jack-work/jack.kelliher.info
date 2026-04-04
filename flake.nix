@@ -36,7 +36,7 @@
               after = [ "network.target" ];
               wantedBy = [ "multi-user.target" ];
               serviceConfig = {
-                ExecStart = "${pkgs.caddy}/bin/caddy run --config ${pkgs.writeText "jack-site-Caddyfile" ''
+                ExecStart = "${pkgs.caddy}/bin/caddy run --adapter caddyfile --config ${pkgs.writeText "jack-site-Caddyfile" ''
                   :${toString cfg.port} {
                     root * ${site}
                     file_server
@@ -64,6 +64,13 @@
               };
             };
 
+            # Dedicated user for cloudflared so sops-nix can grant read access
+            users.users.jack-site-tunnel = {
+              isSystemUser = true;
+              group = "jack-site-tunnel";
+            };
+            users.groups.jack-site-tunnel = {};
+
             systemd.services.jack-site-cloudflared = {
               description = "jack.kelliher.info — Cloudflare Tunnel";
               after = [ "network-online.target" "jack-site-caddy.service" ];
@@ -75,9 +82,10 @@
               '';
               serviceConfig = {
                 Type = "simple";
+                User = "jack-site-tunnel";
+                Group = "jack-site-tunnel";
                 Restart = "on-failure";
                 RestartSec = 10;
-                DynamicUser = true;
                 ProtectHome = true;
                 PrivateTmp = true;
                 NoNewPrivileges = true;
