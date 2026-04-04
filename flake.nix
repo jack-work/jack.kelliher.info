@@ -42,7 +42,6 @@
 
             # Future client app
             nodejs_22
-            nodePackages.npm
 
             # Utilities
             jq
