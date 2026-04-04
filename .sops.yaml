@@ -1,0 +1,15 @@
+keys:
+  # Operator workstation — used to encrypt secrets.
+  # Replace with your age public key (age-keygen or ssh-to-age).
+  - &operator REPLACE_WITH_OPERATOR_AGE_PUBLIC_KEY
+
+  # Deploy target — derived from SSH host key via ssh-to-age.
+  # Run: ssh-to-age -i /etc/ssh/ssh_host_ed25519_key.pub
+  - &deploy REPLACE_WITH_DEPLOY_TARGET_AGE_PUBLIC_KEY
+
+creation_rules:
+  - path_regex: secrets/.*\.yaml$
+    key_groups:
+      - age:
+          - *operator
+          - *deploy

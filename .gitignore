@@ -1,0 +1,17 @@
+result
+.direnv
+
+# Terraform
+terraform/.terraform/
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/terraform.tfvars
+terraform/tfplan*
+terraform/.terraform.lock.hcl
+
+# Node (future)
+node_modules/
+
+# Secrets (plaintext) — encrypted yaml is committed
+*.key
+tunnel-env
