@@ -2,8 +2,8 @@ keys:
   # Operator workstation (gluck)
   - &operator age12edvyhzhyd4afl4veljtyt572ga430dk29unpszp2n2vn244zdzqa9zhu7
 
-  # Deploy target (spain) — derived from SSH host key
-  - &deploy age1k0cqvmddkmherk9mr58jqwmxya9fm7p7u2j5fv0a3yc03sfcx5gq0wx2az
+  # Deploy target (spain) — existing sops-nix key
+  - &deploy age136h60ucfnz4w480dakvpx26k54l3j04yzpx5rmgdcqzw8nnn8q4qp86pwa
 
 creation_rules:
   - path_regex: secrets/.*\.yaml$
