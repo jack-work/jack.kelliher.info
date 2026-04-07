@@ -171,8 +171,6 @@ function carveSlots(base: Interval, blocked: Interval[]): Interval[] {
   return slots.filter(s => s.right - s.left >= 30)
 }
 
-function countSpaces(t: string): number { let n = 0; for (const c of t) if (c === ' ') n++; return n }
-
 // ─── Layout helpers ────────────────────────────────────────────────
 
 /** Centered text — uses CSS text-align:center for pixel-perfect centering */
@@ -246,21 +244,13 @@ function layoutJustified(
     el.style.top = `${ln.y}px`
     el.style.font = font
     el.style.color = color
+    el.style.left = `${ln.x}px`
+    el.style.width = `${ln.mw}px`
 
     if (!isLast) {
-      const sp = countSpaces(ln.text)
-      const extra = ln.mw - ln.width
-      if (sp > 0 && extra > 0 && extra < ln.mw * 0.3) {
-        el.style.left = `${ln.x}px`
-        el.style.width = `${ln.mw}px`
-        el.style.wordSpacing = `${extra / sp}px`
-        el.style.textAlign = 'justify'
-      } else {
-        // Can't justify, center in full region
-        el.style.left = `${padX}px`
-        el.style.width = `${contentWidth}px`
-        el.style.textAlign = 'center'
-      }
+      // Browser-native justification — stretches text to fill slot width
+      el.style.textAlign = 'justify'
+      el.style.textAlignLast = 'justify'
     } else {
       // Last line: center in full content width
       el.style.left = `${padX}px`
