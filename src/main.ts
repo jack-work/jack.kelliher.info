@@ -2,7 +2,6 @@ import {
   prepareWithSegments,
   layoutNextLine,
   type LayoutCursor,
-  type LayoutLine,
   type PreparedTextWithSegments,
 } from '@chenglou/pretext'
 
@@ -34,6 +33,10 @@ const COLOR_TEXT = '#1a1714'
 const COLOR_MUTED = '#6b6258'
 const COLOR_DIVIDER = '#c4bdb4'
 
+// ─── Card flip state ───────────────────────────────────────────────
+
+let flipped = false
+
 // ─── Cannonball state ──────────────────────────────────────────────
 
 type Ball = {
@@ -50,7 +53,6 @@ let lastFrameTime: number | null = null
 let mouseX = 0
 let mouseY = 0
 
-// Card geometry — updated each render
 let cardLeft = 0
 let cardTop = 0
 let cardWidth = 0
@@ -64,7 +66,6 @@ function playCannonSound(): void {
   if (!audioCtx) audioCtx = new AudioContext()
   const ctx = audioCtx
 
-  // Low boom
   const osc = ctx.createOscillator()
   const gain = ctx.createGain()
   osc.type = 'sine'
@@ -77,7 +78,6 @@ function playCannonSound(): void {
   osc.start(ctx.currentTime)
   osc.stop(ctx.currentTime + 0.4)
 
-  // Noise burst for the crack
   const bufferSize = ctx.sampleRate * 0.15
   const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
   const data = buffer.getChannelData(0)
@@ -93,7 +93,6 @@ function playCannonSound(): void {
   noiseGain.connect(ctx.destination)
   noise.start(ctx.currentTime)
 
-  // Mid thump
   const osc2 = ctx.createOscillator()
   const gain2 = ctx.createGain()
   osc2.type = 'triangle'
@@ -125,12 +124,18 @@ function playBounceSound(): void {
 
 // ─── DOM ───────────────────────────────────────────────────────────
 
-const stage = document.getElementById('stage')!
-const card = document.getElementById('card')!
+const cardWrapper = document.getElementById('card-wrapper')!
+const cardEl = document.getElementById('card')!
+const stageFront = document.getElementById('stage-front')!
+const stageBack = document.getElementById('stage-back')!
 const ballEl = document.getElementById('cannonball')! as HTMLDivElement
 const launchBtn = document.getElementById('launch-btn')!
-const linePool: HTMLDivElement[] = []
-let poolIndex = 0
+
+// Separate line pools for front and back
+const frontPool: HTMLDivElement[] = []
+const backPool: HTMLDivElement[] = []
+let frontIdx = 0
+let backIdx = 0
 
 let preparedName: PreparedTextWithSegments
 let preparedTitle: PreparedTextWithSegments
@@ -139,9 +144,9 @@ let preparedBlurb: PreparedTextWithSegments
 let scheduledRaf: number | null = null
 let animating = false
 
-function getOrCreateLineEl(): HTMLDivElement {
-  if (poolIndex < linePool.length) {
-    const el = linePool[poolIndex]!
+function getOrCreateLine(pool: HTMLDivElement[], idx: { v: number }, stage: HTMLElement): HTMLDivElement {
+  if (idx.v < pool.length) {
+    const el = pool[idx.v]!
     el.style.display = ''
     el.style.background = ''
     el.style.width = ''
@@ -149,20 +154,20 @@ function getOrCreateLineEl(): HTMLDivElement {
     el.style.wordSpacing = ''
     el.style.textAlign = ''
     el.innerHTML = ''
-    poolIndex++
+    idx.v++
     return el
   }
   const el = document.createElement('div')
   el.className = 'line'
   stage.appendChild(el)
-  linePool.push(el)
-  poolIndex++
+  pool.push(el)
+  idx.v++
   return el
 }
 
-function hideUnusedLines(): void {
-  for (let i = poolIndex; i < linePool.length; i++) {
-    linePool[i]!.style.display = 'none'
+function hideUnused(pool: HTMLDivElement[], fromIdx: number): void {
+  for (let i = fromIdx; i < pool.length; i++) {
+    pool[i]!.style.display = 'none'
   }
 }
 
@@ -204,20 +209,16 @@ function countSpaces(text: string): number {
   return n
 }
 
-/** Layout text with obstacle avoidance and justification */
+type LineCtx = { pool: HTMLDivElement[]; idx: { v: number }; stage: HTMLElement }
+
 function layoutFlowingText(
+  lc: LineCtx,
   prepared: PreparedTextWithSegments,
-  font: string,
-  color: string,
+  font: string, color: string,
   lineHeight: number,
-  regionLeft: number,
-  regionRight: number,
-  startY: number,
-  justify: boolean,
-  ballLocalX: number,
-  ballLocalY: number,
-  ballR: number,
-  ballActive: boolean,
+  regionLeft: number, regionRight: number,
+  startY: number, justify: boolean,
+  ballLocalX: number, ballLocalY: number, ballR: number, ballActive: boolean,
 ): number {
   let cursor: LayoutCursor = { segmentIndex: 0, graphemeIndex: 0 }
   let y = startY
@@ -246,7 +247,6 @@ function layoutFlowingText(
     }
 
     let exhausted = false
-    // Sort slots by proximity to center so text fills from center outward
     const sorted = [...slots].sort((a, b) => {
       const aMid = (a.left + a.right) / 2
       const bMid = (b.left + b.right) / 2
@@ -268,7 +268,7 @@ function layoutFlowingText(
   if (pending.length > 0) pending[pending.length - 1]!.isLast = true
 
   for (const p of pending) {
-    const el = getOrCreateLineEl()
+    const el = getOrCreateLine(lc.pool, lc.idx, lc.stage)
     el.textContent = p.text
     el.style.top = `${p.y}px`
     el.style.font = font
@@ -279,18 +279,15 @@ function layoutFlowingText(
       if (spaces > 0) {
         const extra = p.maxWidth - p.width
         if (extra > 0 && extra < p.maxWidth * 0.3) {
-          // Justified: position at slot left, stretch with word-spacing
           el.style.left = `${p.x}px`
           el.style.wordSpacing = `${extra / spaces}px`
         } else {
-          // Can't justify reasonably, center in slot
           el.style.left = `${p.x + (p.maxWidth - p.width) / 2}px`
         }
       } else {
         el.style.left = `${p.x + (p.maxWidth - p.width) / 2}px`
       }
     } else {
-      // Last line: center in the full region, not just the slot
       el.style.left = `${regionLeft + (regionWidth - p.width) / 2}px`
     }
   }
@@ -298,14 +295,12 @@ function layoutFlowingText(
   return y
 }
 
-/** Simple text layout (for name, title) — always centered in content area */
 function layoutCenteredText(
+  lc: LineCtx,
   prepared: PreparedTextWithSegments,
-  font: string,
-  color: string,
+  font: string, color: string,
   lineHeight: number,
-  contentWidth: number,
-  contentLeft: number,
+  contentWidth: number, contentLeft: number,
   startY: number,
 ): number {
   let cursor: LayoutCursor = { segmentIndex: 0, graphemeIndex: 0 }
@@ -313,9 +308,8 @@ function layoutCenteredText(
   while (true) {
     const line = layoutNextLine(prepared, cursor, contentWidth)
     if (line === null) break
-    const el = getOrCreateLineEl()
+    const el = getOrCreateLine(lc.pool, lc.idx, lc.stage)
     el.textContent = line.text
-    // Center: place line in the middle of content area
     el.style.left = `${contentLeft + (contentWidth - line.width) / 2}px`
     el.style.top = `${y}px`
     el.style.font = font
@@ -326,10 +320,42 @@ function layoutCenteredText(
   return y
 }
 
+function renderLinks(lc: LineCtx, padX: number, contentWidth: number, y: number): number {
+  const linkEl = getOrCreateLine(lc.pool, lc.idx, lc.stage)
+  linkEl.style.left = `${padX}px`
+  linkEl.style.top = `${y}px`
+  linkEl.style.font = LINK_FONT
+  linkEl.style.color = COLOR_MUTED
+  linkEl.style.textAlign = 'center'
+  linkEl.style.width = `${contentWidth}px`
+
+  for (let i = 0; i < LINKS.length; i++) {
+    const link = LINKS[i]!
+    if (i > 0) linkEl.appendChild(document.createTextNode('  ·  '))
+    const a = document.createElement('a')
+    a.href = link.href
+    a.textContent = link.text
+    if (link.href.startsWith('http')) { a.target = '_blank'; a.rel = 'noopener' }
+    linkEl.appendChild(a)
+  }
+  return y + 28
+}
+
+function renderDivider(lc: LineCtx, padX: number, contentWidth: number, y: number): number {
+  const dividerWidth = 48
+  const divider = getOrCreateLine(lc.pool, lc.idx, lc.stage)
+  divider.textContent = ''
+  divider.style.left = `${padX + (contentWidth - dividerWidth) / 2}px`
+  divider.style.top = `${y}px`
+  divider.style.width = `${dividerWidth}px`
+  divider.style.height = '1px'
+  divider.style.background = COLOR_DIVIDER
+  return y + 28
+}
+
 // ─── Render ────────────────────────────────────────────────────────
 
 function render(): void {
-  poolIndex = 0
   const vw = window.innerWidth
   const vh = window.innerHeight
 
@@ -341,76 +367,61 @@ function render(): void {
   cardWidth = contentWidth + padX * 2
   cardLeft = Math.round((vw - cardWidth) / 2)
 
-  // Ball position relative to the card's stage
+  // ─── Render FRONT (compact: name, title, divider, links) ────────
+  const fc: LineCtx = { pool: frontPool, idx: { v: 0 }, stage: stageFront }
+  let fy = padY
+
+  fy = layoutCenteredText(fc, preparedName, NAME_FONT, COLOR_TEXT, NAME_LINE_HEIGHT, contentWidth, padX, fy)
+  fy += 2
+  fy = layoutCenteredText(fc, preparedTitle, TITLE_FONT, COLOR_MUTED, TITLE_LINE_HEIGHT, contentWidth, padX, fy)
+  fy += 24
+  fy = renderDivider(fc, padX, contentWidth, fy)
+  fy = renderLinks(fc, padX, contentWidth, fy)
+  fy += padY - 12
+
+  hideUnused(frontPool, fc.idx.v)
+
+  // ─── Render BACK (full: name, title, divider, blurb, links) ─────
+  const bc: LineCtx = { pool: backPool, idx: { v: 0 }, stage: stageBack }
+
   const ballLocalX = ball.x - cardLeft
   const ballLocalY = ball.y - cardTop
 
-  let y = padY
+  let by = padY
 
-  // Name — centered
-  y = layoutCenteredText(preparedName, NAME_FONT, COLOR_TEXT, NAME_LINE_HEIGHT, contentWidth, padX, y)
-  y += 2
+  by = layoutCenteredText(bc, preparedName, NAME_FONT, COLOR_TEXT, NAME_LINE_HEIGHT, contentWidth, padX, by)
+  by += 2
+  by = layoutCenteredText(bc, preparedTitle, TITLE_FONT, COLOR_MUTED, TITLE_LINE_HEIGHT, contentWidth, padX, by)
+  by += 24
+  by = renderDivider(bc, padX, contentWidth, by)
 
-  // Title — centered
-  y = layoutCenteredText(preparedTitle, TITLE_FONT, COLOR_MUTED, TITLE_LINE_HEIGHT, contentWidth, padX, y)
-  y += 24
-
-  // Divider — centered
-  const dividerWidth = 48
-  const divider = getOrCreateLineEl()
-  divider.textContent = ''
-  divider.style.left = `${padX + (contentWidth - dividerWidth) / 2}px`
-  divider.style.top = `${y}px`
-  divider.style.width = `${dividerWidth}px`
-  divider.style.height = '1px'
-  divider.style.background = COLOR_DIVIDER
-  y += 28
-
-  // Blurb — justified, obstacle-aware
-  y = layoutFlowingText(
-    preparedBlurb, BODY_FONT, COLOR_TEXT, BODY_LINE_HEIGHT,
-    padX, padX + contentWidth, y,
-    true,
-    ballLocalX, ballLocalY, ball.r,
-    ball.active,
+  by = layoutFlowingText(
+    bc, preparedBlurb, BODY_FONT, COLOR_TEXT, BODY_LINE_HEIGHT,
+    padX, padX + contentWidth, by, true,
+    ballLocalX, ballLocalY, ball.r, ball.active,
   )
-  y += 28
+  by += 28
+  by = renderLinks(bc, padX, contentWidth, by)
+  by += padY - 12
 
-  // Links — inline, centered
-  const linkEl = getOrCreateLineEl()
-  linkEl.style.left = `${padX}px`
-  linkEl.style.top = `${y}px`
-  linkEl.style.font = LINK_FONT
-  linkEl.style.color = COLOR_MUTED
-  linkEl.style.textAlign = 'center'
-  linkEl.style.width = `${contentWidth}px`
+  hideUnused(backPool, bc.idx.v)
 
-  for (let i = 0; i < LINKS.length; i++) {
-    const link = LINKS[i]!
-    if (i > 0) {
-      const sep = document.createTextNode('  ·  ')
-      linkEl.appendChild(sep)
-    }
-    const a = document.createElement('a')
-    a.href = link.href
-    a.textContent = link.text
-    if (link.href.startsWith('http')) {
-      a.target = '_blank'
-      a.rel = 'noopener'
-    }
-    linkEl.appendChild(a)
-  }
-  y += 28
+  // ─── Size card to the visible face ──────────────────────────────
+  const visibleHeight = flipped ? by : fy
+  cardHeight = visibleHeight
 
-  y += padY - 12
+  cardWrapper.style.width = `${cardWidth}px`
+  cardWrapper.style.height = `${visibleHeight}px`
+  cardTop = Math.round(Math.max(16, (vh - visibleHeight) / 2))
+  cardWrapper.style.left = `${cardLeft}px`
+  cardWrapper.style.top = `${cardTop}px`
 
-  // Size & position card
-  cardHeight = y
-  card.style.width = `${cardWidth}px`
-  card.style.height = `${cardHeight}px`
-  cardTop = Math.round(Math.max(16, (vh - cardHeight) / 2))
-  card.style.left = `${cardLeft}px`
-  card.style.top = `${cardTop}px`
+  // Both faces need full height for the 3D transform
+  const maxHeight = Math.max(fy, by)
+  const frontFace = document.getElementById('card-front')!
+  const backFace = document.getElementById('card-back')!
+  frontFace.style.height = `${fy}px`
+  backFace.style.height = `${by}px`
 
   // Ball element
   if (ball.active) {
@@ -422,22 +433,17 @@ function render(): void {
   } else {
     ballEl.style.display = 'none'
   }
-
-  hideUnusedLines()
 }
 
 // ─── Cannonball physics ────────────────────────────────────────────
 
 function launchCannonball(): void {
-  // Pick nearest corner to the button (bottom-right)
   const vw = window.innerWidth
   const vh = window.innerHeight
 
-  // Launch from bottom-right toward the mouse position
   ball.x = vw + ball.r
   ball.y = vh + ball.r
 
-  // Aim at mouse (or card center if mouse hasn't moved)
   const targetX = mouseX || vw / 2
   const targetY = mouseY || vh / 2
   const dx = targetX - ball.x
@@ -475,7 +481,6 @@ function animationLoop(time: number): void {
   const vw = window.innerWidth
   const vh = window.innerHeight
 
-  // Bounce off viewport edges
   let bounced = false
   if (ball.x - ball.r < 0) { ball.x = ball.r; ball.vx = Math.abs(ball.vx) * 0.85; bounced = true }
   if (ball.x + ball.r > vw) { ball.x = vw - ball.r; ball.vx = -Math.abs(ball.vx) * 0.85; bounced = true }
@@ -484,14 +489,10 @@ function animationLoop(time: number): void {
 
   if (bounced) playBounceSound()
 
-  // Friction
   ball.vx *= 0.995
   ball.vy *= 0.995
-
-  // Gravity — gentle pull down
   ball.vy += 60 * dt
 
-  // Stop when slow enough
   const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy)
   if (speed < 10) {
     ball.active = false
@@ -516,14 +517,32 @@ function scheduleRender(): void {
   })
 }
 
-// Track mouse position for aiming
 document.addEventListener('mousemove', (e) => {
   mouseX = e.clientX
   mouseY = e.clientY
 })
 
-// Launch button
+// Flip card on click — but NOT if clicking a link or the launch button
+cardEl.addEventListener('click', (e) => {
+  const target = e.target as HTMLElement
+  if (target.closest('a')) return  // let links navigate
+  if (target.closest('#launch-btn')) return
+
+  flipped = !flipped
+  cardEl.classList.toggle('flipped', flipped)
+
+  // Animate wrapper height to match the new face
+  scheduleRender()
+
+  // Re-render after transition to resize wrapper smoothly
+  setTimeout(scheduleRender, 50)
+  setTimeout(scheduleRender, 350)
+  setTimeout(scheduleRender, 700)
+})
+
+// Launch button — ONLY this triggers the cannonball
 launchBtn.addEventListener('click', (e) => {
+  e.preventDefault()
   e.stopPropagation()
   launchCannonball()
 })

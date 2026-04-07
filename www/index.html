@@ -25,11 +25,40 @@
       -moz-osx-font-smoothing: grayscale;
     }
 
-    #card {
+    /* ─── 3D Card ─────────────────────────────────── */
+
+    #card-wrapper {
       position: absolute;
+      perspective: 1200px;
+    }
+
+    #card {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.7s cubic-bezier(0.4, 0.0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    #card.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
       background: #fff;
       border: 1px solid #d6d0c8;
       box-shadow: 0 2px 8px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.02);
+    }
+
+    #card-back {
+      transform: rotateY(180deg);
     }
 
     .line {
@@ -44,12 +73,26 @@
       text-decoration: none;
       border-bottom: 1px solid transparent;
       transition: color 0.2s, border-color 0.2s;
+      cursor: pointer;
     }
 
     .line a:hover {
       color: #1a1714;
       border-bottom-color: #c4bdb4;
     }
+
+    .flip-hint {
+      position: absolute;
+      bottom: 12px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font: italic 13px 'Cormorant Garamond', Georgia, serif;
+      color: #c4bdb4;
+      pointer-events: none;
+    }
+
+    /* ─── Cannonball ──────────────────────────────── */
 
     #cannonball {
       position: fixed;
@@ -62,6 +105,7 @@
         inset 0 -3px 6px rgba(0,0,0,0.5);
       pointer-events: none;
       z-index: 100;
+      display: none;
     }
 
     #launch-btn {
@@ -96,10 +140,19 @@
   </style>
 </head>
 <body>
-  <div id="card">
-    <div id="stage"></div>
+  <div id="card-wrapper">
+    <div id="card">
+      <div id="card-front" class="card-face">
+        <div id="stage-front"></div>
+        <div class="flip-hint">click to turn over</div>
+      </div>
+      <div id="card-back" class="card-face">
+        <div id="stage-back"></div>
+        <div class="flip-hint">click to turn over</div>
+      </div>
+    </div>
   </div>
-  <div id="cannonball" style="display:none"></div>
+  <div id="cannonball"></div>
   <button id="launch-btn" title="Launch cannonball">💣</button>
   <script type="module" src="main.js"></script>
 </body>
