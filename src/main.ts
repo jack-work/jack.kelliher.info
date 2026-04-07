@@ -59,18 +59,10 @@ let cardHeight = 0
 
 const stage = document.getElementById('stage')!
 const card = document.getElementById('card')!
+const ballEl = document.getElementById('cannonball')! as HTMLDivElement
+const launchBtn = document.getElementById('launch-btn')!
 const linePool: HTMLDivElement[] = []
 let poolIndex = 0
-
-let ballEl: HTMLDivElement | null = null
-
-function getBallEl(): HTMLDivElement {
-  if (ballEl) return ballEl
-  ballEl = document.createElement('div')
-  ballEl.id = 'cannonball'
-  document.body.appendChild(ballEl)
-  return ballEl
-}
 
 let preparedName: PreparedTextWithSegments
 let preparedTitle: PreparedTextWithSegments
@@ -204,12 +196,13 @@ function layoutFlowingText(
   for (const p of pending) {
     const el = getOrCreateLineEl()
     el.textContent = p.text
-    el.style.left = `${p.x}px`
     el.style.top = `${p.y}px`
     el.style.font = font
     el.style.color = color
 
     if (justify && !p.isLast) {
+      // Justified: fill the slot width with word-spacing
+      el.style.left = `${p.x}px`
       const spaces = countSpaces(p.text)
       if (spaces > 0) {
         const extra = p.maxWidth - p.width
@@ -217,6 +210,10 @@ function layoutFlowingText(
           el.style.wordSpacing = `${extra / spaces}px`
         }
       }
+    } else {
+      // Last line or non-justified: center in slot
+      const offset = (p.maxWidth - p.width) / 2
+      el.style.left = `${p.x + offset}px`
     }
   }
 
@@ -340,13 +337,12 @@ function render(): void {
 
   // Ball element
   if (ball.active) {
-    const el = getBallEl()
-    el.style.display = ''
-    el.style.left = `${ball.x - ball.r}px`
-    el.style.top = `${ball.y - ball.r}px`
-    el.style.width = `${ball.r * 2}px`
-    el.style.height = `${ball.r * 2}px`
-  } else if (ballEl) {
+    ballEl.style.display = 'block'
+    ballEl.style.left = `${ball.x - ball.r}px`
+    ballEl.style.top = `${ball.y - ball.r}px`
+    ballEl.style.width = `${ball.r * 2}px`
+    ballEl.style.height = `${ball.r * 2}px`
+  } else {
     ballEl.style.display = 'none'
   }
 
@@ -450,18 +446,10 @@ function scheduleRender(): void {
   })
 }
 
-// Launch on click anywhere that isn't a link
-document.addEventListener('click', (e) => {
-  if ((e.target as HTMLElement).closest('a')) return
+// Launch button
+launchBtn.addEventListener('click', (e) => {
+  e.stopPropagation()
   launchCannonball()
-})
-
-// Also launch on spacebar
-document.addEventListener('keydown', (e) => {
-  if (e.key === ' ' || e.key === 'Enter') {
-    e.preventDefault()
-    launchCannonball()
-  }
 })
 
 async function init(): Promise<void> {
