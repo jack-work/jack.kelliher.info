@@ -409,19 +409,19 @@ function render(): void {
   // ─── Size card to the visible face ──────────────────────────────
   const visibleHeight = flipped ? by : fy
   cardHeight = visibleHeight
+  cardTop = Math.round(Math.max(16, (vh - visibleHeight) / 2))
 
   cardWrapper.style.width = `${cardWidth}px`
   cardWrapper.style.height = `${visibleHeight}px`
-  cardTop = Math.round(Math.max(16, (vh - visibleHeight) / 2))
   cardWrapper.style.left = `${cardLeft}px`
   cardWrapper.style.top = `${cardTop}px`
 
-  // Both faces need full height for the 3D transform
-  const maxHeight = Math.max(fy, by)
-  const frontFace = document.getElementById('card-front')!
-  const backFace = document.getElementById('card-back')!
-  frontFace.style.height = `${fy}px`
-  backFace.style.height = `${by}px`
+  // Card element needs explicit size for 3D transform
+  cardEl.style.width = `${cardWidth}px`
+  cardEl.style.height = `${visibleHeight}px`
+
+  document.getElementById('card-front')!.style.height = `${fy}px`
+  document.getElementById('card-back')!.style.height = `${by}px`
 
   // Ball element
   if (ball.active) {
