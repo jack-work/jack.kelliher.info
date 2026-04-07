@@ -33,7 +33,6 @@ const TITLE_LINE_HEIGHT = 28
 const COLOR_TEXT = '#1a1714'
 const COLOR_MUTED = '#6b6258'
 const COLOR_DIVIDER = '#c4bdb4'
-const BALL_COLOR = '#2a2520'
 
 // ─── Cannonball state ──────────────────────────────────────────────
 
@@ -48,12 +47,81 @@ type Ball = {
 
 const ball: Ball = { x: 0, y: 0, vx: 0, vy: 0, r: 28, active: false }
 let lastFrameTime: number | null = null
+let mouseX = 0
+let mouseY = 0
 
 // Card geometry — updated each render
 let cardLeft = 0
 let cardTop = 0
 let cardWidth = 0
 let cardHeight = 0
+
+// ─── Audio ─────────────────────────────────────────────────────────
+
+let audioCtx: AudioContext | null = null
+
+function playCannonSound(): void {
+  if (!audioCtx) audioCtx = new AudioContext()
+  const ctx = audioCtx
+
+  // Low boom
+  const osc = ctx.createOscillator()
+  const gain = ctx.createGain()
+  osc.type = 'sine'
+  osc.frequency.setValueAtTime(80, ctx.currentTime)
+  osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.3)
+  gain.gain.setValueAtTime(0.4, ctx.currentTime)
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4)
+  osc.connect(gain)
+  gain.connect(ctx.destination)
+  osc.start(ctx.currentTime)
+  osc.stop(ctx.currentTime + 0.4)
+
+  // Noise burst for the crack
+  const bufferSize = ctx.sampleRate * 0.15
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+  const data = buffer.getChannelData(0)
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.03))
+  }
+  const noise = ctx.createBufferSource()
+  const noiseGain = ctx.createGain()
+  noise.buffer = buffer
+  noiseGain.gain.setValueAtTime(0.25, ctx.currentTime)
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15)
+  noise.connect(noiseGain)
+  noiseGain.connect(ctx.destination)
+  noise.start(ctx.currentTime)
+
+  // Mid thump
+  const osc2 = ctx.createOscillator()
+  const gain2 = ctx.createGain()
+  osc2.type = 'triangle'
+  osc2.frequency.setValueAtTime(150, ctx.currentTime)
+  osc2.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.2)
+  gain2.gain.setValueAtTime(0.2, ctx.currentTime)
+  gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25)
+  osc2.connect(gain2)
+  gain2.connect(ctx.destination)
+  osc2.start(ctx.currentTime)
+  osc2.stop(ctx.currentTime + 0.25)
+}
+
+function playBounceSound(): void {
+  if (!audioCtx) return
+  const ctx = audioCtx
+  const osc = ctx.createOscillator()
+  const gain = ctx.createGain()
+  osc.type = 'sine'
+  osc.frequency.setValueAtTime(120, ctx.currentTime)
+  osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.08)
+  gain.gain.setValueAtTime(0.1, ctx.currentTime)
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1)
+  osc.connect(gain)
+  gain.connect(ctx.destination)
+  osc.start(ctx.currentTime)
+  osc.stop(ctx.currentTime + 0.1)
+}
 
 // ─── DOM ───────────────────────────────────────────────────────────
 
@@ -153,8 +221,9 @@ function layoutFlowingText(
 ): number {
   let cursor: LayoutCursor = { segmentIndex: 0, graphemeIndex: 0 }
   let y = startY
+  const regionWidth = regionRight - regionLeft
+  const regionCenterX = regionLeft + regionWidth / 2
 
-  // Collect all lines first for justification (need to know which is last)
   type PendingLine = { text: string; width: number; x: number; y: number; maxWidth: number; isLast: boolean }
   const pending: PendingLine[] = []
 
@@ -172,12 +241,19 @@ function layoutFlowingText(
     const slots = carveSlots(base, blocked)
     if (slots.length === 0) {
       y += lineHeight
-      if (y > startY + 800) break // safety
+      if (y > startY + 800) break
       continue
     }
 
     let exhausted = false
-    for (const slot of slots.sort((a, b) => a.left - b.left)) {
+    // Sort slots by proximity to center so text fills from center outward
+    const sorted = [...slots].sort((a, b) => {
+      const aMid = (a.left + a.right) / 2
+      const bMid = (b.left + b.right) / 2
+      return Math.abs(aMid - regionCenterX) - Math.abs(bMid - regionCenterX)
+    })
+
+    for (const slot of sorted) {
       const slotWidth = slot.right - slot.left
       const line = layoutNextLine(prepared, cursor, slotWidth)
       if (line === null) { exhausted = true; break }
@@ -189,10 +265,8 @@ function layoutFlowingText(
     if (exhausted) break
   }
 
-  // Mark last line
   if (pending.length > 0) pending[pending.length - 1]!.isLast = true
 
-  // Render
   for (const p of pending) {
     const el = getOrCreateLineEl()
     el.textContent = p.text
@@ -201,45 +275,48 @@ function layoutFlowingText(
     el.style.color = color
 
     if (justify && !p.isLast) {
-      // Justified: fill the slot width with word-spacing
-      el.style.left = `${p.x}px`
       const spaces = countSpaces(p.text)
       if (spaces > 0) {
         const extra = p.maxWidth - p.width
         if (extra > 0 && extra < p.maxWidth * 0.3) {
+          // Justified: position at slot left, stretch with word-spacing
+          el.style.left = `${p.x}px`
           el.style.wordSpacing = `${extra / spaces}px`
+        } else {
+          // Can't justify reasonably, center in slot
+          el.style.left = `${p.x + (p.maxWidth - p.width) / 2}px`
         }
+      } else {
+        el.style.left = `${p.x + (p.maxWidth - p.width) / 2}px`
       }
     } else {
-      // Last line or non-justified: center in slot
-      const offset = (p.maxWidth - p.width) / 2
-      el.style.left = `${p.x + offset}px`
+      // Last line: center in the full region, not just the slot
+      el.style.left = `${regionLeft + (regionWidth - p.width) / 2}px`
     }
   }
 
   return y
 }
 
-/** Simple single-line text layout (for name, title, links) */
-function layoutSimpleText(
+/** Simple text layout (for name, title) — always centered in content area */
+function layoutCenteredText(
   prepared: PreparedTextWithSegments,
   font: string,
   color: string,
   lineHeight: number,
-  maxWidth: number,
-  x: number,
+  contentWidth: number,
+  contentLeft: number,
   startY: number,
-  align: 'left' | 'center' = 'left',
 ): number {
   let cursor: LayoutCursor = { segmentIndex: 0, graphemeIndex: 0 }
   let y = startY
   while (true) {
-    const line = layoutNextLine(prepared, cursor, maxWidth)
+    const line = layoutNextLine(prepared, cursor, contentWidth)
     if (line === null) break
     const el = getOrCreateLineEl()
     el.textContent = line.text
-    const offsetX = align === 'center' ? (maxWidth - line.width) / 2 : 0
-    el.style.left = `${x + offsetX}px`
+    // Center: place line in the middle of content area
+    el.style.left = `${contentLeft + (contentWidth - line.width) / 2}px`
     el.style.top = `${y}px`
     el.style.font = font
     el.style.color = color
@@ -262,7 +339,7 @@ function render(): void {
   const maxContentWidth = 600
   const contentWidth = Math.min(maxContentWidth, vw - padX * 2 - 32)
   cardWidth = contentWidth + padX * 2
-  cardLeft = Math.max(0, (vw - cardWidth) / 2)
+  cardLeft = Math.round((vw - cardWidth) / 2)
 
   // Ball position relative to the card's stage
   const ballLocalX = ball.x - cardLeft
@@ -271,11 +348,11 @@ function render(): void {
   let y = padY
 
   // Name — centered
-  y = layoutSimpleText(preparedName, NAME_FONT, COLOR_TEXT, NAME_LINE_HEIGHT, contentWidth, padX, y, 'center')
+  y = layoutCenteredText(preparedName, NAME_FONT, COLOR_TEXT, NAME_LINE_HEIGHT, contentWidth, padX, y)
   y += 2
 
   // Title — centered
-  y = layoutSimpleText(preparedTitle, TITLE_FONT, COLOR_MUTED, TITLE_LINE_HEIGHT, contentWidth, padX, y, 'center')
+  y = layoutCenteredText(preparedTitle, TITLE_FONT, COLOR_MUTED, TITLE_LINE_HEIGHT, contentWidth, padX, y)
   y += 24
 
   // Divider — centered
@@ -331,7 +408,7 @@ function render(): void {
   cardHeight = y
   card.style.width = `${cardWidth}px`
   card.style.height = `${cardHeight}px`
-  cardTop = Math.max(16, (vh - cardHeight) / 2)
+  cardTop = Math.round(Math.max(16, (vh - cardHeight) / 2))
   card.style.left = `${cardLeft}px`
   card.style.top = `${cardTop}px`
 
@@ -352,37 +429,27 @@ function render(): void {
 // ─── Cannonball physics ────────────────────────────────────────────
 
 function launchCannonball(): void {
+  // Pick nearest corner to the button (bottom-right)
   const vw = window.innerWidth
   const vh = window.innerHeight
 
-  // Launch from a random corner
-  const corner = Math.floor(Math.random() * 4)
-  const speed = 350 + Math.random() * 150
+  // Launch from bottom-right toward the mouse position
+  ball.x = vw + ball.r
+  ball.y = vh + ball.r
 
-  switch (corner) {
-    case 0: // top-left
-      ball.x = -ball.r; ball.y = -ball.r
-      ball.vx = speed * (0.6 + Math.random() * 0.4)
-      ball.vy = speed * (0.6 + Math.random() * 0.4)
-      break
-    case 1: // top-right
-      ball.x = vw + ball.r; ball.y = -ball.r
-      ball.vx = -speed * (0.6 + Math.random() * 0.4)
-      ball.vy = speed * (0.6 + Math.random() * 0.4)
-      break
-    case 2: // bottom-left
-      ball.x = -ball.r; ball.y = vh + ball.r
-      ball.vx = speed * (0.6 + Math.random() * 0.4)
-      ball.vy = -speed * (0.6 + Math.random() * 0.4)
-      break
-    case 3: // bottom-right
-      ball.x = vw + ball.r; ball.y = vh + ball.r
-      ball.vx = -speed * (0.6 + Math.random() * 0.4)
-      ball.vy = -speed * (0.6 + Math.random() * 0.4)
-      break
-  }
+  // Aim at mouse (or card center if mouse hasn't moved)
+  const targetX = mouseX || vw / 2
+  const targetY = mouseY || vh / 2
+  const dx = targetX - ball.x
+  const dy = targetY - ball.y
+  const dist = Math.sqrt(dx * dx + dy * dy)
+  const speed = 700 + Math.random() * 200
 
+  ball.vx = (dx / dist) * speed
+  ball.vy = (dy / dist) * speed
   ball.active = true
+
+  playCannonSound()
 
   if (!animating) {
     animating = true
@@ -405,25 +472,28 @@ function animationLoop(time: number): void {
   ball.x += ball.vx * dt
   ball.y += ball.vy * dt
 
-  // Bounce off viewport edges
   const vw = window.innerWidth
   const vh = window.innerHeight
 
-  if (ball.x - ball.r < 0) { ball.x = ball.r; ball.vx = Math.abs(ball.vx) * 0.9 }
-  if (ball.x + ball.r > vw) { ball.x = vw - ball.r; ball.vx = -Math.abs(ball.vx) * 0.9 }
-  if (ball.y - ball.r < 0) { ball.y = ball.r; ball.vy = Math.abs(ball.vy) * 0.9 }
-  if (ball.y + ball.r > vh) { ball.y = vh - ball.r; ball.vy = -Math.abs(ball.vy) * 0.9 }
+  // Bounce off viewport edges
+  let bounced = false
+  if (ball.x - ball.r < 0) { ball.x = ball.r; ball.vx = Math.abs(ball.vx) * 0.85; bounced = true }
+  if (ball.x + ball.r > vw) { ball.x = vw - ball.r; ball.vx = -Math.abs(ball.vx) * 0.85; bounced = true }
+  if (ball.y - ball.r < 0) { ball.y = ball.r; ball.vy = Math.abs(ball.vy) * 0.85; bounced = true }
+  if (ball.y + ball.r > vh) { ball.y = vh - ball.r; ball.vy = -Math.abs(ball.vy) * 0.85; bounced = true }
+
+  if (bounced) playBounceSound()
 
   // Friction
-  ball.vx *= 0.997
-  ball.vy *= 0.997
+  ball.vx *= 0.995
+  ball.vy *= 0.995
 
   // Gravity — gentle pull down
-  ball.vy += 40 * dt
+  ball.vy += 60 * dt
 
   // Stop when slow enough
   const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy)
-  if (speed < 8) {
+  if (speed < 10) {
     ball.active = false
     animating = false
     lastFrameTime = null
@@ -439,12 +509,18 @@ function animationLoop(time: number): void {
 
 function scheduleRender(): void {
   if (scheduledRaf !== null) return
-  if (animating) return // animation loop handles renders
+  if (animating) return
   scheduledRaf = requestAnimationFrame(() => {
     scheduledRaf = null
     render()
   })
 }
+
+// Track mouse position for aiming
+document.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX
+  mouseY = e.clientY
+})
 
 // Launch button
 launchBtn.addEventListener('click', (e) => {
