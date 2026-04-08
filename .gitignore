@@ -12,9 +12,6 @@ terraform/.terraform.lock.hcl
 # Dependencies
 node_modules/
 
-# Build output is committed (nix sandbox can't fetch deps)
-# Run `bun run build` before committing
-
 # Secrets (plaintext) — encrypted yaml is committed
 *.key
 tunnel-env

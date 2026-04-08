@@ -2,17 +2,10 @@
   "name": "jack.kelliher.info",
   "type": "module",
   "private": true,
-  "scripts": {
-    "dev": "bun build src/main.ts --outdir www --entry-naming=[name].js --watch",
-    "build": "bun build src/main.ts --outdir www --entry-naming=[name].js --minify"
-  },
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
-  },
-  "dependencies": {
-    "@chenglou/pretext": "^0.0.4"
   }
 }

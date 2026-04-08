@@ -107,7 +107,7 @@
         # Static site output — www/ contains pre-built assets (bun build locally)
         packages.default = pkgs.stdenv.mkDerivation {
           pname = "jack-kelliher-info";
-          version = "0.2.0";
+          version = "0.3.0";
           src = ./www;
           installPhase = ''
             mkdir -p $out
