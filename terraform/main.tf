@@ -37,6 +37,16 @@ resource "cloudflare_dns_record" "jack" {
   comment = "jack.kelliher.info — managed by OpenTofu"
 }
 
+resource "cloudflare_dns_record" "john" {
+  zone_id = var.cloudflare_zone_id
+  name    = "john"
+  content = "${cloudflare_zero_trust_tunnel_cloudflared.jack_site.id}.cfargotunnel.com"
+  type    = "CNAME"
+  ttl     = 1
+  proxied = true
+  comment = "john.kelliher.info — managed by OpenTofu"
+}
+
 # ─── Tunnel ingress config ──────────────────────────────────────────
 
 resource "cloudflare_zero_trust_tunnel_cloudflared_config" "jack_site" {
@@ -46,6 +56,10 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "jack_site" {
     ingress = [
       {
         hostname = "jack.kelliher.info"
+        service  = "http://localhost:8780"
+      },
+      {
+        hostname = "john.kelliher.info"
         service  = "http://localhost:8780"
       },
       {

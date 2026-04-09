@@ -175,5 +175,10 @@
       </div>
     </div>
   </div>
+  <script>
+    const name = location.hostname.startsWith('jack') ? 'Jack' : 'John';
+    document.querySelector('h1').textContent = name + ' Kelliher';
+    document.title = name + ' Kelliher';
+  </script>
 </body>
 </html>
