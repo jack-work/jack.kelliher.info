@@ -6,10 +6,22 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils, ... }:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+      ...
+    }:
     let
       # NixOS module — import this in your system flake
-      nixosModule = { config, lib, pkgs, ... }:
+      nixosModule =
+        {
+          config,
+          lib,
+          pkgs,
+          ...
+        }:
         let
           cfg = config.services.jack-site;
           site = self.packages.${pkgs.system}.default;
@@ -61,6 +73,22 @@
                 PrivateTmp = true;
                 NoNewPrivileges = true;
                 ProtectSystem = "strict";
+                PrivateDevices = true;
+                PrivateUsers = true;
+                ProtectKernelTunables = true;
+                ProtectKernelModules = true;
+                ProtectKernelLogs = true;
+                ProtectControlGroups = true;
+                RestrictAddressFamilies = [ "AF_INET" "AF_INET6" ];
+                RestrictNamespaces = true;
+                RestrictRealtime = true;
+                RestrictSUIDSGID = true;
+                LockPersonality = true;
+                MemoryDenyWriteExecute = true;
+                SystemCallFilter = [ "@system-service" ];
+                SystemCallArchitectures = "native";
+                SystemCallErrorNumber = "EPERM";
+                CapabilityBoundingSet = "";
               };
             };
 
@@ -69,11 +97,14 @@
               isSystemUser = true;
               group = "jack-site-tunnel";
             };
-            users.groups.jack-site-tunnel = {};
+            users.groups.jack-site-tunnel = { };
 
             systemd.services.jack-site-cloudflared = {
-              description = "jack.kelliher.info — Cloudflare Tunnel";
-              after = [ "network-online.target" "jack-site-caddy.service" ];
+              description = "jack.kelliher.info Cloudflare Tunnel";
+              after = [
+                "network-online.target"
+                "jack-site-caddy.service"
+              ];
               wants = [ "network-online.target" ];
               wantedBy = [ "multi-user.target" ];
               script = ''
@@ -90,6 +121,22 @@
                 PrivateTmp = true;
                 NoNewPrivileges = true;
                 ProtectSystem = "strict";
+                PrivateDevices = true;
+                PrivateUsers = true;
+                ProtectKernelTunables = true;
+                ProtectKernelModules = true;
+                ProtectKernelLogs = true;
+                ProtectControlGroups = true;
+                RestrictAddressFamilies = [ "AF_INET" "AF_INET6" ];
+                RestrictNamespaces = true;
+                RestrictRealtime = true;
+                RestrictSUIDSGID = true;
+                LockPersonality = true;
+                MemoryDenyWriteExecute = true;
+                SystemCallFilter = [ "@system-service" ];
+                SystemCallArchitectures = "native";
+                SystemCallErrorNumber = "EPERM";
+                CapabilityBoundingSet = "";
               };
             };
           };
@@ -98,8 +145,8 @@
     {
       nixosModules.default = nixosModule;
     }
-    //
-    flake-utils.lib.eachDefaultSystem (system:
+    // flake-utils.lib.eachDefaultSystem (
+      system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
       in
