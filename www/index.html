@@ -51,12 +51,12 @@
       position: absolute;
       pointer-events: none;
     }
-    .card .frame-outer { inset: 0; border: 1px solid var(--gold); }
-    .card .frame { inset: 7px; border: 1px solid rgba(162, 118, 42, 0.55); }
+    .card .frame-outer { inset: 0; border: 3px solid var(--gold); }
+    .card .frame { inset: 8px; border: 2px solid rgba(162, 118, 42, 0.62); }
 
     /* Size, border and the round window come from glyphmark; only the
        spacing below it is this card's business. */
-    .profile-photo { --glyphmark-size: 120px; --glyphmark-border: 2px; margin-bottom: 28px; }
+    .profile-photo { --glyphmark-size: 120px; --glyphmark-border: 4px; margin-bottom: 28px; }
 
     h1 {
       font-size: 56px;
@@ -85,7 +85,7 @@
     .ornament::after {
       content: '';
       width: 36px;
-      height: 1px;
+      height: 2px;
       background: rgba(162, 118, 42, 0.6);
     }
 
@@ -127,7 +127,7 @@
 
     @media (max-width: 560px) {
       .card { padding: 36px 24px; }
-      .card .frame { inset: 5px; }
+      .card .frame { inset: 6px; }
       h1 { font-size: 42px; }
       .title { font-size: 17px; }
       .profile-photo { --glyphmark-size: 100px; }
@@ -148,7 +148,7 @@
       <div class="frame-outer boil-ui-squiggle"></div>
       <div class="frame boil-ui-squiggle"></div>
       <img class="profile-photo glyphmark glyphmark-round heft boil-ui-squiggle" src="profile-pixel.png" alt="John Kelliher" draggable="false">
-      <h1 class="boil-text-erode fontpack-display">John Kelliher</h1>
+      <h1 class="boil-text-squiggle fontpack-display">John Kelliher</h1>
       <div class="title boil-text-fine fontpack-mono">Senior Software Engineer</div>
       <div class="ornament boil-ui-squiggle" aria-hidden="true">◆</div>
       <p class="blurb boil-text fontpack-prose">Senior Software Engineer at Microsoft building distributed infrastructure for agentic development platforms and real-time collaborative state systems at global scale. End-to-end engineer spanning backend architecture, cloud deployment, observability, container orchestration, and Linux systems development. At home designing persistent data structures, wiring deployments, or fighting livesite fires with panache.</p>
