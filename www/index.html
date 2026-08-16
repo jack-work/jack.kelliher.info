@@ -33,7 +33,6 @@
 
     .card {
       background: var(--paper);
-      border: 1px solid var(--gold);
       max-width: 560px;
       width: 100%;
       padding: 52px;
@@ -44,12 +43,16 @@
 
     /* A real element, not ::after: the boil lands on leaves, never on the
        wrapper — a filter is a containing block for absolute descendants. */
-    .card .frame {
+    /* Two borders, two leaves. Neither lives on .card itself: a filter makes
+       its element a containing block for absolute descendants, so boiling the
+       card would silently reparent both of these. */
+    .card .frame,
+    .card .frame-outer {
       position: absolute;
-      inset: 7px;
-      border: 1px solid rgba(162, 118, 42, 0.55);
       pointer-events: none;
     }
+    .card .frame-outer { inset: 0; border: 1px solid var(--gold); }
+    .card .frame { inset: 7px; border: 1px solid rgba(162, 118, 42, 0.55); }
 
     /* Size, border and the round window come from glyphmark; only the
        spacing below it is this card's business. */
@@ -138,11 +141,13 @@
   <!-- zanni:phosphor -->
   <!-- zanni:fontpack -->
   <!-- zanni:glyphmark -->
+  <!-- zanni:heft -->
 
   <div class="sheet gesso phosphor-host phosphor-soft">
-    <div class="card">
+    <div class="card heft-lift">
+      <div class="frame-outer boil-ui-squiggle"></div>
       <div class="frame boil-ui-squiggle"></div>
-      <img class="profile-photo glyphmark glyphmark-round" src="profile-pixel.png" alt="John Kelliher">
+      <img class="profile-photo glyphmark glyphmark-round heft boil-ui-squiggle" src="profile-pixel.png" alt="John Kelliher" draggable="false">
       <h1 class="boil-text-erode fontpack-display">John Kelliher</h1>
       <div class="title boil-text-fine fontpack-mono">Senior Software Engineer</div>
       <div class="ornament boil-ui-squiggle" aria-hidden="true">◆</div>
