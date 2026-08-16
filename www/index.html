@@ -45,16 +45,9 @@
       pointer-events: none;
     }
 
-    .profile-photo {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid var(--gold);
-      outline: 1px solid rgba(162, 118, 42, 0.5);
-      outline-offset: 4px;
-      margin-bottom: 28px;
-    }
+    /* Size, border and the round window come from glyphmark; only the
+       spacing below it is this card's business. */
+    .profile-photo { --glyphmark-size: 120px; --glyphmark-border: 2px; margin-bottom: 28px; }
 
     h1 {
       font-size: 56px;
@@ -128,7 +121,7 @@
       .card .frame { inset: 5px; }
       h1 { font-size: 42px; }
       .title { font-size: 17px; }
-      .profile-photo { width: 100px; height: 100px; }
+      .profile-photo { --glyphmark-size: 100px; }
       .blurb { font-size: 17px; }
     }
   </style>
@@ -138,11 +131,12 @@
   <!-- zanni:gesso -->
   <!-- zanni:phosphor -->
   <!-- zanni:fontpack -->
+  <!-- zanni:glyphmark -->
 
   <div class="sheet gesso phosphor-host">
     <div class="card">
       <div class="frame boil-ui"></div>
-      <img class="profile-photo" src="profile.jpg" alt="John Kelliher">
+      <img class="profile-photo glyphmark glyphmark-round" src="profile-pixel.png" alt="John Kelliher">
       <h1 class="boil-text fontpack-display">John Kelliher</h1>
       <div class="title boil-text fontpack-mono">Senior Software Engineer</div>
       <div class="ornament boil-ui" aria-hidden="true">◆</div>

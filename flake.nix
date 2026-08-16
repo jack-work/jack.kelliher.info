@@ -80,7 +80,16 @@
           pname = "jack-kelliher-info";
           version = "0.5.0";
           src = ./www;
-          components = [ "boil" "gesso" "phosphor" "fontpack" ];
+          components = [ "boil" "gesso" "phosphor" "fontpack" "glyphmark" ];
+          # The mark is 80px in the file and 120px on the page: 1.5x
+          # magnification, against figar.org's 26->38 (1.46x). Pixelated
+          # CSS over the full-size JPEG would have done nothing at all.
+          files."profile-pixel.png" = zanni.lib.pixelate {
+            inherit pkgs;
+            src = ./www/profile.jpg;
+            size = 80;
+            colors = 48;
+          };
         };
 
         devShells.default = pkgs.mkShell {
