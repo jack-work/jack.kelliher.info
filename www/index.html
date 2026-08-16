@@ -17,6 +17,12 @@
     body { min-height: 100vh; }
 
     .sheet {
+      /* The veil, turned down from figar.org's settings: softened to a ramp
+         and roughly a third of the ink. The card is read at arm's length on
+         a dense screen, where the hard 3px comb reads as a fence. */
+      --phosphor-ink: 0.14;
+      --phosphor-pitch: 4px;
+      --phosphor-strength: 0.34;
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -133,7 +139,7 @@
   <!-- zanni:fontpack -->
   <!-- zanni:glyphmark -->
 
-  <div class="sheet gesso phosphor-host">
+  <div class="sheet gesso phosphor-host phosphor-soft">
     <div class="card">
       <div class="frame boil-ui"></div>
       <img class="profile-photo glyphmark glyphmark-round" src="profile-pixel.png" alt="John Kelliher">
