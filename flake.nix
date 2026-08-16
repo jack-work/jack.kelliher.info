@@ -80,6 +80,7 @@
           pname = "jack-kelliher-info";
           version = "0.5.0";
           src = ./www;
+          components = [ "boil" "gesso" "phosphor" "fontpack" ];
         };
 
         devShells.default = pkgs.mkShell {

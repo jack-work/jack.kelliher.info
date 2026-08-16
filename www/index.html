@@ -6,45 +6,42 @@
   <title>John Kelliher</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" href="favicon.ico" sizes="any">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <!-- The three pixel-classical faces arrive here, injected by zanni's
+       fontpack component at build time. -->
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    ::selection {
-      background: #d6cfc4;
-      color: #2a2520;
-    }
+    /* The ground, the veil and the faces are zanni's; what follows is only
+       this card's own geometry and the two or three places it reaches into
+       the palette gesso defines. */
+    body { min-height: 100vh; }
 
-    body {
-      background: #ece7dd;
-      font-family: 'Cormorant Garamond', 'Palatino Linotype', Palatino, Georgia, serif;
-      font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
-      color: #2a2520;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
+    .sheet {
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 32px 16px;
+      overflow: hidden;      /* the veil is inset 0; nothing should escape it */
     }
 
     .card {
-      background: #faf8f4;
-      border: 1px solid #c4bdb4;
+      background: var(--paper);
+      border: 1px solid var(--gold);
       max-width: 560px;
       width: 100%;
       padding: 52px;
       text-align: center;
       position: relative;
+      color: var(--ink);
     }
 
+    /* A real element, not ::after: the boil lands on leaves, never on the
+       wrapper — a filter is a containing block for absolute descendants. */
     .card .frame {
       position: absolute;
       inset: 7px;
-      border: 1px solid #d8d1c7;
+      border: 1px solid rgba(162, 118, 42, 0.55);
       pointer-events: none;
     }
 
@@ -53,28 +50,23 @@
       height: 120px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid #c4bdb4;
-      outline: 1px solid #c4bdb4;
+      border: 2px solid var(--gold);
+      outline: 1px solid rgba(162, 118, 42, 0.5);
       outline-offset: 4px;
       margin-bottom: 28px;
     }
 
     h1 {
-      font-weight: 600;
-      font-size: 38px;
-      line-height: 1.15;
-      letter-spacing: 0.035em;
-      margin-bottom: 6px;
+      font-size: 56px;
+      color: var(--ink);
+      margin-bottom: 10px;
     }
 
     .title {
-      font-variant: small-caps;
-      text-transform: lowercase;
-      font-weight: 500;
-      font-size: 16px;
-      letter-spacing: 0.16em;
-      color: #7a7068;
-      margin-bottom: 28px;
+      font-size: 19px;
+      letter-spacing: 0.14em;
+      color: var(--oxblood);
+      margin-bottom: 26px;
     }
 
     .ornament {
@@ -82,9 +74,9 @@
       align-items: center;
       justify-content: center;
       gap: 12px;
-      margin: 0 auto 28px;
-      font-size: 7px;
-      color: #b8ad9e;
+      margin: 0 auto 26px;
+      font-size: 8px;
+      color: var(--gold);
     }
 
     .ornament::before,
@@ -92,65 +84,50 @@
       content: '';
       width: 36px;
       height: 1px;
-      background: #c4bdb4;
+      background: rgba(162, 118, 42, 0.6);
     }
 
     .blurb {
       font-size: 18px;
-      line-height: 1.7;
-      color: #3a342e;
+      color: var(--ink);
       margin-bottom: 32px;
       text-align: justify;
       text-align-last: center;
-      font-feature-settings: 'kern' 1, 'liga' 1, 'onum' 1;
     }
 
-    .contact {
-      text-align: center;
-    }
+    .contact { text-align: center; }
 
     .email {
       display: inline-block;
-      font-size: 17px;
-      font-style: italic;
-      color: #7a7068;
+      font-size: 21px;
+      color: var(--gold);
       text-decoration: none;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       transition: color 0.25s;
     }
-
-    .email:hover {
-      color: #2a2520;
-    }
+    .email:hover { color: var(--ink); }
 
     .links {
-      font-size: 15px;
-      letter-spacing: 0.06em;
-      color: #8a8078;
+      font-size: 19px;
+      color: var(--muted);
     }
-
     .links a {
-      color: #7a7068;
+      color: var(--oxblood);
       text-decoration: none;
       border-bottom: 1px solid transparent;
       transition: color 0.25s, border-color 0.25s;
     }
-
     .links a:hover {
-      color: #2a2520;
-      border-bottom-color: #b8ad9e;
+      color: var(--ink);
+      border-bottom-color: var(--gold);
     }
-
-    .links .sep {
-      margin: 0 8px;
-      color: #c4bdb4;
-    }
+    .links .sep { margin: 0 8px; color: rgba(162, 118, 42, 0.6); }
 
     @media (max-width: 560px) {
       .card { padding: 36px 24px; }
       .card .frame { inset: 5px; }
-      h1 { font-size: 30px; }
-      .title { font-size: 14px; }
+      h1 { font-size: 42px; }
+      .title { font-size: 17px; }
       .profile-photo { width: 100px; height: 100px; }
       .blurb { font-size: 17px; }
     }
@@ -158,21 +135,27 @@
 </head>
 <body>
   <!-- zanni:boil -->
-  <div class="card">
-    <div class="frame boil-ui"></div>
-    <img class="profile-photo" src="profile.jpg" alt="John Kelliher">
-    <h1 class="boil-text">John Kelliher</h1>
-    <div class="title boil-text">Senior Software Engineer</div>
-    <div class="ornament boil-ui" aria-hidden="true">◆</div>
-    <p class="blurb boil-text">Senior Software Engineer at Microsoft building distributed infrastructure for agentic development platforms and real-time collaborative state systems at global scale. End-to-end engineer spanning backend architecture, cloud deployment, observability, container orchestration, and Linux systems development. At home designing persistent data structures, wiring deployments, or fighting livesite fires with panache.</p>
-    <div class="contact">
-      <a class="email boil-text" href="mailto:jackwkelliher@gmail.com">jackwkelliher@gmail.com</a>
-      <div class="links boil-text">
-        <a href="https://www.linkedin.com/in/john-william-kelliher/" target="_blank" rel="noopener">LinkedIn</a>
-        <span class="sep">·</span>
-        <a href="https://github.com/jack-work" target="_blank" rel="noopener">GitHub</a>
-        <span class="sep">·</span>
-        <a href="resume_kelliher.pdf" download>Résumé</a>
+  <!-- zanni:gesso -->
+  <!-- zanni:phosphor -->
+  <!-- zanni:fontpack -->
+
+  <div class="sheet gesso phosphor-host">
+    <div class="card">
+      <div class="frame boil-ui"></div>
+      <img class="profile-photo" src="profile.jpg" alt="John Kelliher">
+      <h1 class="boil-text fontpack-display">John Kelliher</h1>
+      <div class="title boil-text fontpack-mono">Senior Software Engineer</div>
+      <div class="ornament boil-ui" aria-hidden="true">◆</div>
+      <p class="blurb boil-text fontpack-prose">Senior Software Engineer at Microsoft building distributed infrastructure for agentic development platforms and real-time collaborative state systems at global scale. End-to-end engineer spanning backend architecture, cloud deployment, observability, container orchestration, and Linux systems development. At home designing persistent data structures, wiring deployments, or fighting livesite fires with panache.</p>
+      <div class="contact">
+        <a class="email boil-text fontpack-mono" href="mailto:jackwkelliher@gmail.com">jackwkelliher@gmail.com</a>
+        <div class="links boil-text fontpack-mono">
+          <a href="https://www.linkedin.com/in/john-william-kelliher/" target="_blank" rel="noopener">LinkedIn</a>
+          <span class="sep">·</span>
+          <a href="https://github.com/jack-work" target="_blank" rel="noopener">GitHub</a>
+          <span class="sep">·</span>
+          <a href="resume_kelliher.pdf" download>Résumé</a>
+        </div>
       </div>
     </div>
   </div>
