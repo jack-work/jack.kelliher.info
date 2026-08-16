@@ -97,11 +97,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1786912292,
-        "narHash": "sha256-kLAjtzffcFdnJ4/VwxJwBkpw6VpdoUEQS77DpC+6nrk=",
+        "lastModified": 1786921340,
+        "narHash": "sha256-E5yKwGrPmfz6AsZSCgeZQ4wHdcRyv5HECAQkxe8CLwU=",
         "owner": "jack-work",
         "repo": "zanni",
-        "rev": "8c3ac32972495290d58e966031f02264c510b0bf",
+        "rev": "3a70e1440279270bc4112f47f580270d627a68d9",
         "type": "github"
       },
       "original": {

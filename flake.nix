@@ -49,6 +49,19 @@
               hostnames = cfg.hostnames;
               root = self.packages.${pkgs.system}.default;
               extraConfig = ''
+                # Every file in the nix store has mtime=1, so Caddy sends
+                # Last-Modified: 1970 and nothing else. With no Cache-Control
+                # a browser applies RFC 9111 heuristic freshness — 10% of the
+                # document's apparent age — which for a 56-year-old timestamp
+                # is over five YEARS. The page is then never revalidated and a
+                # deploy is invisible to anyone who has already visited.
+                # HTML must always be revalidated; the fingerprinted-ish
+                # assets may be cached briefly.
+                header /*.html Cache-Control "no-cache, must-revalidate"
+                header / Cache-Control "no-cache, must-revalidate"
+                header /*.png Cache-Control "public, max-age=300"
+                header /*.jpg Cache-Control "public, max-age=300"
+                header /*.pdf Cache-Control "public, max-age=300"
                 header {
                   X-Content-Type-Options nosniff
                   X-Frame-Options DENY
