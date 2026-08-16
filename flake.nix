@@ -4,6 +4,11 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    # The house's UI library. It carries the boil effect from figar.org
+    # and, more to the point, the guard that proves the effect survived
+    # the build — see zanni/docs/boil.md.
+    zanni.url = "github:jack-work/zanni";
+    zanni.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
@@ -11,6 +16,7 @@
       self,
       nixpkgs,
       flake-utils,
+      zanni,
       ...
     }:
     let
@@ -65,14 +71,15 @@
         pkgs = nixpkgs.legacyPackages.${system};
       in
       {
-        packages.default = pkgs.stdenv.mkDerivation {
+        # www/ plus the zanni components its pages ask for. One call:
+        # the injection and the guard live in zanni, not here, so the
+        # effect cannot rot separately in every site that wears it. The
+        # build fails if index.html loses its marker or its classes.
+        packages.default = zanni.lib.mkBoiledSite {
+          inherit pkgs;
           pname = "jack-kelliher-info";
-          version = "0.4.0";
+          version = "0.5.0";
           src = ./www;
-          installPhase = ''
-            mkdir -p $out
-            cp -r . $out/
-          '';
         };
 
         devShells.default = pkgs.mkShell {
