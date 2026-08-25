@@ -33,9 +33,9 @@
 
     .card {
       background: var(--paper);
-      max-width: 560px;
+      max-width: min(94vw, 1080px);
       width: 100%;
-      padding: 52px;
+      padding: clamp(30px, 3.6vw, 86px);
       text-align: center;
       position: relative;
       color: var(--ink);
@@ -56,19 +56,24 @@
 
     /* Size, border and the round window come from glyphmark; only the
        spacing below it is this card's business. */
-    .profile-photo { --glyphmark-size: 120px; --glyphmark-border: 4px; margin-bottom: 28px; }
+    .profile-photo {
+      --glyphmark-size: clamp(104px, 12vw, 224px);
+      --glyphmark-border: clamp(3px, 0.4vw, 6px);
+      --glyphmark-ring: clamp(2px, 0.25vw, 4px);
+      margin-bottom: clamp(20px, 2.2vw, 38px);
+    }
 
     h1 {
-      font-size: 56px;
+      font-size: clamp(40px, 6.6vw, 128px);
       color: var(--ink);
-      margin-bottom: 10px;
+      margin-bottom: clamp(6px, 0.8vw, 16px);
     }
 
     .title {
-      font-size: 19px;
+      font-size: clamp(16px, 2vw, 38px);
       letter-spacing: 0.14em;
       color: var(--oxblood);
-      margin-bottom: 26px;
+      margin-bottom: clamp(20px, 2.2vw, 40px);
     }
 
     .ornament {
@@ -77,31 +82,49 @@
       justify-content: center;
       gap: 12px;
       margin: 0 auto 26px;
-      font-size: 8px;
+      font-size: clamp(7px, 0.8vw, 15px);
       color: var(--gold);
     }
 
     .ornament::before,
     .ornament::after {
       content: '';
-      width: 36px;
-      height: 2px;
+      width: clamp(30px, 3.4vw, 74px);
+      height: clamp(2px, 0.22vw, 3px);
       background: rgba(162, 118, 42, 0.6);
     }
 
     .blurb {
-      font-size: 18px;
+      font-size: clamp(16px, 1.5vw, 30px);
       color: var(--ink);
       margin-bottom: 32px;
       text-align: justify;
       text-align-last: center;
     }
 
+    /* The aside is a postscript, not a second summary: lighter, ragged rather
+       than justified, and set off by a hairline. */
+    .blurb.aside {
+      color: var(--muted);
+      font-style: italic;
+      text-align: center;
+      text-align-last: auto;
+      border-top: 1px solid rgba(162, 118, 42, 0.35);
+      padding-top: clamp(14px, 1.4vw, 26px);
+      margin-top: clamp(-14px, -1.2vw, -8px);
+    }
+    .blurb.aside a {
+      color: var(--oxblood);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(162, 118, 42, 0.5);
+    }
+    .blurb.aside a:hover { color: var(--ink); border-bottom-color: var(--gold); }
+
     .contact { text-align: center; }
 
     .email {
       display: inline-block;
-      font-size: 21px;
+      font-size: clamp(17px, 1.7vw, 33px);
       color: var(--gold);
       text-decoration: none;
       margin-bottom: 10px;
@@ -110,7 +133,7 @@
     .email:hover { color: var(--ink); }
 
     .links {
-      font-size: 19px;
+      font-size: clamp(15px, 1.5vw, 28px);
       color: var(--muted);
     }
     .links a {
@@ -125,13 +148,14 @@
     }
     .links .sep { margin: 0 8px; color: rgba(162, 118, 42, 0.6); }
 
+    /* The clamp() floors already carry the phone. All that is left is to
+       loosen the padding and pull the frames in, so the rules do not crowd
+       the text on a narrow screen. */
     @media (max-width: 560px) {
-      .card { padding: 36px 24px; }
-      .card .frame { inset: 6px; }
-      h1 { font-size: 42px; }
-      .title { font-size: 17px; }
-      .profile-photo { --glyphmark-size: 100px; }
-      .blurb { font-size: 17px; }
+      .card { padding: 30px 20px; }
+      .card .frame { inset: 6px; border-width: 2px; }
+      .card .frame-outer { border-width: 2px; }
+      .blurb { text-align: left; text-align-last: center; }
     }
   </style>
 </head>
@@ -152,6 +176,10 @@
       <div class="title boil-text-fine fontpack-mono">Senior Software Engineer</div>
       <div class="ornament boil-ui-squiggle" aria-hidden="true">◆</div>
       <p class="blurb boil-text fontpack-prose">Senior Software Engineer at Microsoft building distributed infrastructure for agentic development platforms and real-time collaborative state systems at global scale. End-to-end engineer spanning backend architecture, cloud deployment, observability, container orchestration, and Linux systems development. At home designing persistent data structures, wiring deployments, or fighting livesite fires with panache.</p>
+      <p class="blurb aside boil-text fontpack-prose">Away from the office I build
+      <a href="https://figar.org" target="_blank" rel="noopener">Figaro</a>, a coding
+      agent I use daily and answer to nightly, and practice classical guitar, where
+      the repertoire is older than the compiler and considerably less forgiving.</p>
       <div class="contact">
         <a class="email boil-text-fine fontpack-mono" href="mailto:jackwkelliher@gmail.com">jackwkelliher@gmail.com</a>
         <div class="links boil-text-fine fontpack-mono">

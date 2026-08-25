@@ -84,6 +84,64 @@
         pkgs = nixpkgs.legacyPackages.${system};
       in
       {
+        # The résumé PDF, rendered from resume/resume.html at build time.
+        #
+        # The PDF this replaces had no text layer at all: 0 text-drawing
+        # operators and 170,612 curve operators, every letter a vector outline.
+        # It was uncopyable, unreadable to a screen reader, and invisible to an
+        # applicant tracking system. It also carried a browser print header and
+        # a footer containing a local Windows path and username. Both faults
+        # came from printing by hand through a GUI print dialog.
+        #
+        # Building it here makes both structurally impossible: the flags live in
+        # the derivation rather than in a dialog, and the PDF cannot drift from
+        # its source because it is rendered from it every time.
+        packages.resume = pkgs.runCommand "resume_kelliher.pdf" {
+          nativeBuildInputs = [ pkgs.chromium pkgs.poppler-utils ];
+          # A build sandbox has no fonts, and Chromium does not fail when it
+          # cannot find one: it lays out zero glyphs and writes a 2 KB PDF that
+          # looks like a blank page. Naming them here also PINS them, so the
+          # PDF cannot change because a machine's font set did.
+          #
+          # Liberation only, deliberately. The obvious choice is EB Garamond,
+          # which the stylesheet names first, but the packaged EB Garamond
+          # ships Regular and Italic and no Bold: every job title and section
+          # heading loses its weight, and the hierarchy of the page goes with
+          # it. Chromium also embeds it as Type 3 with a custom encoding, which
+          # is exactly the sort of thing an applicant tracking system parses
+          # badly, and being parseable is the whole point of this rebuild.
+          # Liberation Serif is metric-compatible with Times New Roman, ships
+          # all four faces, and embeds as CID TrueType.
+          FONTCONFIG_FILE = pkgs.makeFontsConf {
+            fontDirectories = [ pkgs.liberation_ttf ];
+          };
+        } ''
+          export HOME=$TMPDIR
+          cp ${./resume}/resume.html in.html
+          chromium --headless --no-sandbox --disable-gpu \
+            --no-pdf-header-footer --print-to-pdf=out.pdf "file://$PWD/in.html"
+
+          # The three faults of the old file, asserted rather than hoped for.
+          # A résumé failing any of these should not ship.
+          pages=$(pdfinfo out.pdf | awk '/^Pages:/ {print $2}')
+          if [ "$pages" != "1" ]; then
+            echo "resume: $pages pages, expected 1. What spilled onto page 2:"
+            pdftotext -f 2 out.pdf - | head -20
+            exit 1
+          fi
+
+          words=$(pdftotext out.pdf - | wc -w)
+          if [ "$words" -lt 300 ]; then
+            echo "resume: only $words extractable words; the text layer is missing"; exit 1
+          fi
+
+          if pdftotext out.pdf - | grep -qiE 'file:///|C:.Users|Downloads'; then
+            echo "resume: browser print furniture found in the text layer"; exit 1
+          fi
+
+          cp out.pdf $out
+        '';
+
         # www/ plus the zanni components its pages ask for. One call:
         # the injection and the guard live in zanni, not here, so the
         # effect cannot rot separately in every site that wears it. The
@@ -97,6 +155,7 @@
           # The mark is 80px in the file and 120px on the page: 1.5x
           # magnification, against figar.org's 26->38 (1.46x). Pixelated
           # CSS over the full-size JPEG would have done nothing at all.
+          files."resume_kelliher.pdf" = self.packages.${system}.resume;
           files."profile-pixel.png" = zanni.lib.pixelate {
             inherit pkgs;
             src = ./www/profile.jpg;
