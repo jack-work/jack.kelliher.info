@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy · gws</title>
+  <meta name="description" content="Privacy policy for gws, a personal command-line tool for reading its author's own Gmail.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jacquard+24&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  <style>
+    /* Deliberately plain. This page exists to be READ — by a reviewer who has
+       never seen this site and is deciding whether to approve an application.
+       It borrows the palette so it belongs to jack.kelliher.info, and none of
+       the effects, because a wobbling privacy policy is a worse privacy
+       policy. Legibility outranks flourish. */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --paper: #e7d4c4;
+      --dither: #dfc9b6;
+      --ink: #2b1a15;
+      --muted: #7a584a;
+      --gold: #a2762a;
+      --oxblood: #7d2e2e;
+    }
+
+    body {
+      background-color: var(--paper);
+      background-image: repeating-conic-gradient(var(--dither) 0% 25%, transparent 0% 50%);
+      background-size: 6px 6px;
+      color: var(--ink);
+      font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+      font-size: 19px;
+      line-height: 1.65;
+      padding: 40px 20px 72px;
+    }
+
+    main {
+      max-width: 68ch;
+      margin: 0 auto;
+      background: var(--paper);
+      border: 3px solid var(--gold);
+      padding: 44px 40px;
+    }
+
+    h1 {
+      font-family: 'Jacquard 24', 'EB Garamond', serif;
+      font-weight: 400;
+      font-size: 46px;
+      line-height: 1.1;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+
+    .sub {
+      color: var(--oxblood);
+      font-style: italic;
+      margin-bottom: 4px;
+    }
+
+    .updated { color: var(--muted); font-size: 16px; margin-bottom: 28px; }
+
+    h2 {
+      font-size: 23px;
+      font-weight: 500;
+      margin: 30px 0 8px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(162, 118, 42, 0.45);
+    }
+
+    p { margin-bottom: 12px; }
+    ul { margin: 0 0 12px 1.3em; }
+    li { margin-bottom: 6px; }
+
+    a { color: var(--oxblood); text-decoration: underline; text-underline-offset: 2px; }
+    a:hover { color: var(--ink); }
+
+    code {
+      font-family: ui-monospace, 'Courier New', monospace;
+      font-size: 0.9em;
+      background: rgba(162, 118, 42, 0.13);
+      padding: 1px 5px;
+    }
+
+    strong { font-weight: 500; }
+
+    footer {
+      margin-top: 34px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(162, 118, 42, 0.45);
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    @media (max-width: 560px) {
+      body { font-size: 18px; padding: 22px 14px 48px; }
+      main { padding: 28px 22px; border-width: 2px; }
+      h1 { font-size: 36px; }
+      h2 { font-size: 21px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Privacy Policy</h1>
+    <p class="sub">for <strong>gws</strong>, a personal command-line tool</p>
+    <p class="updated">Last updated: 29 August 2026</p>
+
+    <h2>What this application is</h2>
+    <p><code>gws</code> is a command-line program written and used by John
+    (Jack) Kelliher to read and manage <strong>his own</strong> Google
+    account data, principally Gmail, from his own computer. It is a personal
+    tool. It has no other users, no public sign-up, no web interface, and no
+    server component. It is not offered to anyone else, commercially or
+    otherwise.</p>
+
+    <h2>What data it accesses</h2>
+    <p>When authorised, <code>gws</code> uses the Gmail API to read, compose,
+    label and send mail in the single Google account of its author. It accesses
+    no other person's account, because no other person uses it.</p>
+
+    <h2>What is collected</h2>
+    <p><strong>Nothing.</strong> Specifically:</p>
+    <ul>
+      <li>No data is collected or retained by the developer beyond the
+      author's own machine.</li>
+      <li>No data is transmitted to any third-party server. The only network
+      connection the tool makes for this purpose is directly to Google's own
+      APIs.</li>
+      <li>No data is shared with, sold to, or disclosed to any third party.</li>
+      <li>No analytics, telemetry, tracking or advertising of any kind.</li>
+      <li>No data is used to train any model.</li>
+    </ul>
+    <p>Message content fetched from the API is displayed in the author's
+    terminal and cached locally on the author's own computer so the tool does
+    not have to re-fetch it. That cache never leaves the machine.</p>
+
+    <h2>Credentials and tokens</h2>
+    <p>OAuth credentials and refresh tokens are stored locally on the author's
+    own computer, in the operating system keyring where one is available, and
+    otherwise in an encrypted file in the author's own configuration directory,
+    readable only by his user account. They are never transmitted anywhere
+    except to Google in order to authenticate. Access can be revoked at any
+    time from the author's own
+    <a href="https://myaccount.google.com/permissions">Google Account
+    permissions page</a>, which immediately and permanently ends the tool's
+    access.</p>
+
+    <h2>Google API Services User Data Policy</h2>
+    <p>This application's use of information received from Google APIs adheres
+    to the
+    <a href="https://developers.google.com/terms/api-services-user-data-policy">Google
+    API Services User Data Policy</a>, including the Limited Use requirements.</p>
+
+    <h2>Data retention and deletion</h2>
+    <p>Because no data is held anywhere but the author's own computer, there is
+    nothing held on anyone else's behalf to retain or delete. The author can
+    erase the local cache and stored tokens at any time by deleting them from
+    his machine.</p>
+
+    <h2>Children</h2>
+    <p>This is a single-user personal tool and is not directed at anyone,
+    including children.</p>
+
+    <h2>Changes to this policy</h2>
+    <p>If this tool's behaviour changes, this page will be updated and the date
+    above revised.</p>
+
+    <h2>Contact</h2>
+    <p>Questions about this policy may be sent to
+    <a href="mailto:jackwkelliher@gmail.com">jackwkelliher@gmail.com</a>.</p>
+
+    <footer>
+      <a href="/">jack.kelliher.info</a>
+    </footer>
+  </main>
+</body>
+</html>
